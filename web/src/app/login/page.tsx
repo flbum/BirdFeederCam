@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 
@@ -9,68 +8,33 @@ export default function LoginPage() {
   const supabase = createClientComponentClient();
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const { error } = isLogin
-      ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password });
-
-    setLoading(false);
+  const handleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
     if (error) setError(error.message);
     else router.push('/home');
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-900 p-4">
-      <div className="bg-zinc-800 rounded-xl shadow-lg p-6 w-full max-w-sm">
-        <div className="flex justify-center mb-4">
-          <Image src="/cardinal.png" alt="Logo" width={80} height={80} />
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full px-4 py-3 rounded bg-zinc-700 text-white focus:outline-none focus:ring-2 focus:ring-brand-light"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full px-4 py-3 rounded bg-zinc-700 text-white focus:outline-none focus:ring-2 focus:ring-brand-light"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          {error && <p className="text-red-400 text-center">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-brand-light to-brand-dark rounded-lg text-white font-semibold hover:opacity-90 transition disabled:opacity-50"
-          >
-            {isLogin ? (loading ? 'Logging In...' : 'Log In') : (loading ? 'Signing Up...' : 'Sign Up')}
-          </button>
-        </form>
-
-        <div className="mt-4 text-center text-zinc-400">
-          {isLogin ? "Don't have an account?" : 'Already have one?'}{' '}
-          <button
-            onClick={() => { setIsLogin(!isLogin); setError(null); }}
-            className="text-brand-light font-semibold hover:underline"
-          >
-            {isLogin ? 'Sign Up' : 'Log In'}
-          </button>
-        </div>
+    <div className="flex items-center justify-center min-h-screen bg-zinc-900">
+      <div className="w-full max-w-sm bg-zinc-800 p-6 rounded-lg shadow-lg text-white text-center">
+        <img src="/cardinal.png" alt="Logo" className="mx-auto mb-6 w-16 h-16" />
+        <h1 className="text-2xl font-bold mb-4">Welcome Back</h1>
+        <input
+          type="email"
+          placeholder="Email"
+          className="w-full p-2 rounded bg-zinc-700 mb-4 focus:outline-none"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <button
+          onClick={handleLogin}
+          className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded transition"
+        >
+          Continue
+        </button>
+        {error && <p className="text-red-400 mt-4">{error}</p>}
       </div>
     </div>
   );
