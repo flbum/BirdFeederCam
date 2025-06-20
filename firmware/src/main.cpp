@@ -5,8 +5,7 @@
 #include "secrets.h"   // Your WiFi and Supabase secrets here
 #include <time.h>
 
-// Pin definitions for AI Thinker camera module
-#define PIR_PIN 14
+// Camera model: AI Thinker
 #define CAMERA_MODEL_AI_THINKER
 
 #define PWDN_GPIO_NUM     32
@@ -26,6 +25,8 @@
 #define VSYNC_GPIO_NUM    25
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
+
+#define PIR_PIN           14  // Motion sensor pin
 
 void startCamera() {
   camera_config_t config;
@@ -49,8 +50,8 @@ void startCamera() {
   config.pin_reset    = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
-  config.frame_size = FRAMESIZE_QQVGA;  // low res for speed & size
-  config.jpeg_quality = 12;              // quality (lower is better compression)
+  config.frame_size = FRAMESIZE_QQVGA;   // small image for faster upload
+  config.jpeg_quality = 12;              // lower number = higher quality
   config.fb_count = 1;
 
   esp_err_t err = esp_camera_init(&config);
@@ -68,22 +69,24 @@ void uploadToSupabase(camera_fb_t* fb) {
 
   WiFiClientSecure client;
   client.setInsecure();
-
   HTTPClient http;
 
-  // Get ISO 8601 timestamp for filename
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo)) {
     Serial.println("Failed to obtain time");
     return;
   }
-  char timestamp[30];
-  strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H-%M-%S", &timeinfo);
 
-  String filename = "images/photo_" + String(timestamp) + ".jpg";
-  String url = String(SUPABASE_URL) + "/storage/v1/object/" + SUPABASE_BUCKET + "/" + filename;
+  // Format: /images/YYYY/MM/DD/filename.jpg
+  char folder[32];
+  char fname[32];
+  strftime(folder, sizeof(folder), "images/%Y/%m/%d", &timeinfo);
+  strftime(fname, sizeof(fname), "%Y-%m-%d_%H-%M-%S.jpg", &timeinfo);
 
-  Serial.printf("Uploading to URL: %s\n", url.c_str());
+  String fullPath = String(folder) + "/" + String(fname);
+  String url = String(SUPABASE_URL) + "/storage/v1/object/" + SUPABASE_BUCKET + "/" + fullPath;
+
+  Serial.printf("Uploading to: %s\n", url.c_str());
 
   http.begin(client, url);
   http.addHeader("Content-Type", "image/jpeg");
@@ -92,10 +95,11 @@ void uploadToSupabase(camera_fb_t* fb) {
 
   int httpResponseCode = http.PUT(fb->buf, fb->len);
   if (httpResponseCode > 0) {
-    Serial.printf("Upload response code: %d\n", httpResponseCode);
+    Serial.printf("Upload succeeded. Response: %d\n", httpResponseCode);
   } else {
-    Serial.printf("Upload failed, error: %s\n", http.errorToString(httpResponseCode).c_str());
+    Serial.printf("Upload failed. Error: %s\n", http.errorToString(httpResponseCode).c_str());
   }
+
   http.end();
 }
 
@@ -106,10 +110,11 @@ void setup() {
 
   pinMode(PIR_PIN, INPUT);
 
-  // Check if wakeup caused by PIR motion sensor
+  // Only act if woken by motion
   if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0) {
     Serial.println("Motion detected, waking up...");
 
+    // Connect to WiFi
     WiFi.begin(ssid, password);
     Serial.print("Connecting to WiFi");
     while (WiFi.status() != WL_CONNECTED) {
@@ -118,7 +123,7 @@ void setup() {
     }
     Serial.println("\nConnected to WiFi");
 
-    // Sync time for timestamped filename
+    // Set time from NTP
     configTime(0, 0, "pool.ntp.org", "time.nist.gov");
     struct tm timeinfo;
     if (getLocalTime(&timeinfo)) {
@@ -127,8 +132,8 @@ void setup() {
       Serial.println("Failed to sync time");
     }
 
+    // Start camera and capture
     startCamera();
-
     camera_fb_t* fb = esp_camera_fb_get();
     if (fb) {
       uploadToSupabase(fb);
@@ -140,7 +145,7 @@ void setup() {
     Serial.println("Not a PIR wakeup");
   }
 
-  // Setup wakeup on PIR pin
+  // Prepare for next PIR wakeup
   esp_sleep_enable_ext0_wakeup(GPIO_NUM_14, 1);
 
   delay(100);  // Allow serial to flush
@@ -149,5 +154,5 @@ void setup() {
 }
 
 void loop() {
-  // Nothing here, device sleeps between triggers
+  // Not used — the ESP goes to sleep after setup
 }

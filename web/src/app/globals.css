@@ -25,5 +25,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Tailwind directives removed for standard CSS compatibility */
-/* Add your custom CSS below */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
