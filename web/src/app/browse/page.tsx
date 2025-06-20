@@ -13,6 +13,7 @@ const supabase = createClient(
 type Item = {
   name: string;
   id: string;
+  metadata: any;
 };
 
 export default function BrowsePage() {
@@ -27,25 +28,25 @@ export default function BrowsePage() {
         .list(path, { limit: 100, sortBy: { column: 'name', order: 'asc' } });
 
       if (error) {
-        console.error(error);
+        console.error('Supabase list error:', error);
+        setItems([]);
       } else {
         setItems(data || []);
       }
     };
+
     load();
   }, [path]);
 
   const enterFolder = (folder: string) => {
-    setHistory([...history, path]);
+    setHistory((h) => [...h, path]);
     setPath(`${path}/${folder}`);
   };
 
   const goBack = () => {
-    const prev = history.pop();
-    if (prev) {
-      setPath(prev);
-      setHistory([...history]);
-    }
+    const prev = history[history.length - 1];
+    setHistory((h) => h.slice(0, -1));
+    if (prev) setPath(prev);
   };
 
   return (
@@ -53,34 +54,38 @@ export default function BrowsePage() {
       <h1 className="text-3xl font-bold mb-4">📂 Browse Feed</h1>
 
       {history.length > 0 && (
-        <button onClick={goBack} className="mb-4 text-sm bg-gray-700 px-3 py-1 rounded hover:bg-gray-600">
+        <button
+          onClick={goBack}
+          className="mb-4 text-sm bg-gray-700 px-3 py-1 rounded hover:bg-gray-600"
+        >
           ← Back
         </button>
       )}
 
       <ul className="space-y-2">
-        {items.map((item) => (
-          <li key={item.id}>
-            {item.name.endsWith('.jpg') ? (
+        {items.map((item) =>
+          item.name.endsWith('.jpg') ? (
+            <li key={item.id}>
               <img
-                src={
-                  supabase.storage
-                    .from('birdfeedercam')
-                    .getPublicUrl(`${path}/${item.name}`).data.publicUrl
-                }
+                src={`https://${process.env.NEXT_PUBLIC_SUPABASE_URL!.replace(
+                  'https://',
+                  ''
+                )}/storage/v1/object/public/birdfeedercam/${path}/${item.name}`}
                 alt={item.name}
                 className="rounded w-64"
               />
-            ) : (
+            </li>
+          ) : (
+            <li key={item.id}>
               <button
                 onClick={() => enterFolder(item.name)}
                 className="text-blue-400 hover:underline"
               >
                 📁 {item.name}
               </button>
-            )}
-          </li>
-        ))}
+            </li>
+          )
+        )}
       </ul>
     </div>
   );
