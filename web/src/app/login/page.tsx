@@ -24,14 +24,10 @@ export default function LoginPage() {
     else router.push('/browse');
   };
 
-  const handleGitHubLogin = async () => {
-    await supabase.auth.signInWithOAuth({ provider: 'github' });
-  };
-
   return (
     <div className="bg-zinc-800 p-8 rounded-lg shadow-lg max-w-sm mx-auto mt-16 text-white">
       <h1 className="text-2xl mb-4 text-center font-bold">Sign In / Sign Up</h1>
-      
+
       <input
         type="email"
         placeholder="Email"
@@ -61,13 +57,6 @@ export default function LoginPage() {
       >
         Sign Up
       </button>
-
-      <p className="mt-4 text-center text-sm">
-        Or{' '}
-        <button onClick={handleGitHubLogin} className="text-blue-400 hover:underline">
-          Sign in with GitHub
-        </button>
-      </p>
 
       {error && <p className="mt-4 text-red-400 text-sm text-center">{error}</p>}
     </div>
