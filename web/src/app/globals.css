@@ -2,22 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-/* TheBrokeBros Dark Theme */
 :root {
   --color-bg: #1a1a1b;
   --color-card: #272729;
   --color-text: #e0e0e0;
-  --color-accent: #ff9100;
   --color-button-start: #ff6f00;
   --color-button-end: #ff9100;
 }
+
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
 }
+
 .btn-accent {
   background: linear-gradient(to right, var(--color-button-start), var(--color-button-end));
-}
-.card {
-  background-color: var(--color-card);
 }
