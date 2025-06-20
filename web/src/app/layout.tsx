@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <nav className="flex space-x-4">
               {[
                 { label: 'Home', href: '/' },
-                { label: 'Browse', href: '/folders' },
+                { label: 'Browse', href: '/browse' },
                 { label: 'About', href: '/about' },
                 { label: 'Blog', href: '/blog' },
               ].map(({ label, href }) => (
