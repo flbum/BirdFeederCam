@@ -3,9 +3,11 @@ module.exports = {
   content: ['./src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
-      colors: { 'brand-light': '#3b82f6', 'brand-dark': '#2563eb' },
-      borderRadius: { DEFAULT: '0.5rem' },
+    colors: {
+      'brand-light': '#f43f5e', // customize to match your brand
+      'brand-dark': '#8b5cf6',
     },
   },
+},
   plugins: [],
-};
+}
