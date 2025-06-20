@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
+
 
 type ImageInfo = {
   name: string;
@@ -9,7 +11,7 @@ type ImageInfo = {
 
 export default function Page() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
