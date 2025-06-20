@@ -1,31 +1,23 @@
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-:root {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* TheBrokeBros Dark Theme */
+:root {
+  --color-bg: #1a1a1b;
+  --color-card: #272729;
+  --color-text: #e0e0e0;
+  --color-accent: #ff9100;
+  --color-button-start: #ff6f00;
+  --color-button-end: #ff9100;
+}
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+.btn-accent {
+  background: linear-gradient(to right, var(--color-button-start), var(--color-button-end));
+}
+.card {
+  background-color: var(--color-card);
+}

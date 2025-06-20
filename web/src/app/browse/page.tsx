@@ -4,40 +4,38 @@ import { redirect } from 'next/navigation';
 
 export default async function BrowsePage() {
   const supabase = createServerComponentClient({ cookies });
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) redirect('/login');
 
-  if (!session) {
-    redirect('/login');
-  }
+  const { data: folders } = await supabase.storage.from('birdfeedercam').list('');
 
-  // Fetch image list from 'images' folder in Supabase bucket
-  const { data: files, error } = await supabase.storage
-    .from('birdfeedercam')
-    .list('images', { limit: 100, sortBy: { column: 'name', order: 'asc' } });
-
-  if (error) {
-    console.error('Storage list error:', error.message);
-  }
-
-  // Generate public URLs for each image
-  const imageUrls =
-    files?.map((file) =>
-      supabase.storage.from('birdfeedercam').getPublicUrl(`images/${file.name}`).data.publicUrl
-    ) || [];
+  const folderContent = await Promise.all(
+    folders?.map(async (f) => {
+      const { data: files } = await supabase.storage.from('birdfeedercam').list(f.name);
+      return {
+        folder: f.name,
+        urls: files?.map((fi) =>
+          supabase.storage
+            .from('birdfeedercam')
+            .getPublicUrl(`${f.name}/${fi.name}`).data.publicUrl
+        ) || [],
+      };
+    }) || []
+  );
 
   return (
-    <div className="p-6 text-white">
-      <h1 className="text-3xl font-bold mb-4">📂 Browse Feed</h1>
-
-      {imageUrls.length === 0 && <p>No images found.</p>}
-
-      <div className="grid grid-cols-3 gap-4">
-        {imageUrls.map((url) => (
-          <img key={url} src={url} alt="Bird feeder" className="rounded shadow" />
-        ))}
-      </div>
+    <div className="p-6">
+      <h1 className="text-2xl mb-4">📂 Browse</h1>
+      {folderContent.map(({ folder, urls }) => (
+        <div key={folder} className="mb-6">
+          <h2 className="font-semibold mb-2">{folder}</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {urls.map((u) => (
+              <img key={u} src={u} alt={folder} className="rounded shadow card" />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

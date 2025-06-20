@@ -1,9 +1,12 @@
+import Image from 'next/image';
+
 export default function AboutPage() {
-    return (
-        <main className="p-6">
-            <h1 className="text-2xl font-bold mb-4">About Bird Feeder Cam</h1>
-            <p>This projects wakes up on motion and caputures a picture of a bird, stores the image in Supabase, and displays them with a dark theme web app</p>
-            <p>Built with an ESP32-Cam and Next.js + Supabase frontend</p>
-        </main>
-    );
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-6">
+      <Image src="/cardinal.png" alt="Logo" width={200} height={200} />
+      <p className="mt-6 text-center max-w-lg">
+        This project captures bird activity via an ESP32-CAM and uploads snapshots to Supabase. Explore recent sightings, browse past footage, and enjoy our little winged friends!
+      </p>
+    </div>
+  );
 }
