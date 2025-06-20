@@ -1,9 +1,8 @@
-// web/src/app/browse/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import Link from 'next/link';
+import Image from 'next/image';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,7 +12,7 @@ const supabase = createClient(
 type Item = {
   name: string;
   id: string;
-  metadata: any;
+  metadata: Record<string, unknown>;
 };
 
 export default function BrowsePage() {
@@ -66,13 +65,15 @@ export default function BrowsePage() {
         {items.map((item) =>
           item.name.endsWith('.jpg') ? (
             <li key={item.id}>
-              <img
+              <Image
                 src={`https://${process.env.NEXT_PUBLIC_SUPABASE_URL!.replace(
                   'https://',
                   ''
                 )}/storage/v1/object/public/birdfeedercam/${path}/${item.name}`}
                 alt={item.name}
-                className="rounded w-64"
+                width={320}
+                height={240}
+                className="rounded"
               />
             </li>
           ) : (
