@@ -1,0 +1,47 @@
+# === PlatformIO Core Files ===
+.pio/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.platformio/
+*.elf
+*.bin
+*.hex
+*.map
+*.a
+
+# === VS Code ===
+.vscode/
+*.code-workspace
+
+# === Compiled objects ===
+*.o
+*.d
+*.gcno
+*.gcda
+
+# === Logs and debugging ===
+*.log
+*.trace
+*.csv
+
+# === macOS ===
+.DS_Store
+
+# === Backup / temp files ===
+*.bak
+*.swp
+*.swo
+*.tmp
+*.orig
+
+# === Arduino IDE related ===
+*.ino.cpp
+*.in.cpp
+
+# === Environment-specific ===
+.env
+.env.*
+
+# === Optional firmware output ===
+/firmware*.*
