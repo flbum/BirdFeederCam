@@ -14,14 +14,20 @@ export default function LoginPage() {
 
   const handleSignUp = async () => {
     const { error } = await supabase.auth.signUp({ email, password });
-    if (error) setError(error.message);
-    else router.push('/browse');
+    if (error) {
+      setError(error.message);
+    } else {
+      router.push('/browse');
+    }
   };
 
   const handleSignIn = async () => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError(error.message);
-    else router.push('/browse');
+    if (error) {
+      setError(error.message);
+    } else {
+      router.push('/browse');
+    }
   };
 
   return (
