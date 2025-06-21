@@ -45,3 +45,4 @@
 
 # === Optional firmware output ===
 /firmware*.*
+secrets.h
