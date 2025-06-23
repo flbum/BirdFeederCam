@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-black text-white;
+  min-height: 100vh;
+}
+
+button {
+  @apply transition-all duration-200 ease-in-out;
+}
