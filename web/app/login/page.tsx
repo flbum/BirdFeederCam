@@ -59,7 +59,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="w-full py-2 rounded bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 font-bold text-white"
+            className="w-full py-2 rounded bg-gradient-to-r from-blue-500 to-purple-500 hover:opacity-90 font-bold text-white"
           >
             Log In
           </button>
