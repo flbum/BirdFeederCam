@@ -1,9 +1,40 @@
 'use client'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { supabase } from '../../lib/supabase'
 
 export default function HomePage() {
-  const placeholders = Array.from({ length: 12 })
+  const [images, setImages] = useState<string[]>([])
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      const { data, error } = await supabase
+        .storage
+        .from('birdfeedercam')
+        .list('images', {
+          limit: 100,
+          sortBy: { column: 'name', order: 'desc' },
+        })
+
+      if (error) {
+        console.error('Error fetching images:', error)
+        return
+      }
+
+      if (data) {
+        const urls = data
+          .filter(file => file.name.endsWith('.jpg') || file.name.endsWith('.png'))
+          .map(file =>
+            supabase.storage.from('birdfeedercam').getPublicUrl(`images/${file.name}`).data.publicUrl
+          )
+        setImages(urls)
+      }
+    }
+
+    fetchImages()
+  }, [])
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white">
       <nav className="w-full max-w-6xl mx-auto flex items-center justify-between px-6 py-6">
@@ -25,10 +56,10 @@ export default function HomePage() {
       <section className="max-w-6xl mx-auto px-4 pb-10">
         <h2 className="text-3xl font-bold text-center mb-6">Latest Visitors</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {placeholders.map((_, i) => (
+          {images.map((url, i) => (
             <div key={i} className="rounded-lg overflow-hidden shadow-lg bg-zinc-800">
               <img
-                src={`https://placehold.co/600x400?text=Bird+${i + 1}`}
+                src={url}
                 alt={`Bird ${i + 1}`}
                 className="w-full h-auto object-cover"
                 loading="lazy"
