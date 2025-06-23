@@ -1,78 +1,68 @@
-'use client'
+// app/login/page.tsx
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-export default function LoginPage() {
-  const supabase = createClientComponentClient()
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+export default function AuthPage() {
+  const supabase = createClientComponentClient();
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) setError(error.message)
-    else router.push('/home')
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const fn = isSigningUp ? 'signUp' : 'signInWithPassword';
+    const { error } = await supabase.auth[fn]({ email, password });
+    if (error) setError(error.message);
+    else router.push('/home');
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black px-4 text-white">
       <div className="w-full max-w-sm bg-black border border-gray-700 rounded-lg p-6 flex flex-col items-center space-y-6 shadow-lg">
-        <img
-          src="/cardinal.png"
-          alt="Cardinal Logo"
-          style={{ width: '2in', height: 'auto' }}
-          className="mt-2"
-        />
+        <img src="/cardinal.png" alt="Cardinal Logo" className="w-24 h-auto mt-2" />
+        <h1 className="text-2xl font-semibold text-center">
+          {isSigningUp ? 'Sign up' : 'Sign in'}
+        </h1>
 
-        <h1 className="text-2xl font-semibold text-center">Sign in</h1>
-        <p className="text-sm text-center text-gray-300">
-          Don&apos;t have an account? <a href="/signup" className="underline">Sign up</a>
-        </p>
-
-        <form onSubmit={handleSignIn} className="w-full flex flex-col gap-4">
-          <div className="flex flex-col">
-            <label htmlFor="email" className="text-sm mb-1 text-center">Email</label>
-            <input
-              id="email"
-              type="email"
-              required
-              placeholder="you@example.com"
-              className="w-full px-3 py-2 bg-black border border-gray-500 rounded text-white placeholder-gray-500 text-center"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-            />
-          </div>
-
-          <div className="flex flex-col">
-            <label htmlFor="password" className="text-sm mb-1 text-center">Password</label>
-            <input
-              id="password"
-              type="password"
-              required
-              placeholder="Your password"
-              className="w-full px-3 py-2 bg-black border border-gray-500 rounded text-white placeholder-gray-500 text-center"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
-            <div className="text-sm text-right mt-1">
-              <a href="/reset" className="underline text-gray-400">Forgot Password?</a>
-            </div>
-          </div>
-
+        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+          <input
+            type="email"
+            placeholder="Email"
+            className="text-center px-3 py-2 bg-black border border-gray-500 rounded placeholder-gray-500"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="text-center px-3 py-2 bg-black border border-gray-500 rounded placeholder-gray-500"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+          />
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-          <button
-            type="submit"
-            className="w-full bg-white text-black py-2 rounded hover:bg-gray-300 transition"
-          >
-            Sign in
+          <button type="submit" className="bg-white text-black py-2 rounded hover:bg-gray-300 transition">
+            {isSigningUp ? 'Create Account' : 'Login'}
           </button>
         </form>
+
+        <p className="text-sm text-center text-gray-300">
+          {isSigningUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+          <button
+            type="button"
+            onClick={() => setIsSigningUp(!isSigningUp)}
+            className="underline text-orange-400"
+          >
+            {isSigningUp ? 'Sign in' : 'Sign up'}
+          </button>
+        </p>
       </div>
     </div>
-  )
+  );
 }
