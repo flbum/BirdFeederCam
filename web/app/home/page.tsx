@@ -8,31 +8,41 @@ export default function HomePage() {
   const [images, setImages] = useState<string[]>([])
 
   useEffect(() => {
-    const fetchImages = async () => {
-      const { data, error } = await supabase
-        .storage
-        .from('birdfeedercam')
-        .list('images', {
-          limit: 100,
-          sortBy: { column: 'name', order: 'desc' },
-        })
+    const fetchRecentImages = async () => {
+      const today = new Date()
+      const daysToLookBack = 7
+      let allImageUrls: { path: string; url: string }[] = []
 
-      if (error) {
-        console.error('Error fetching images:', error)
-        return
+      for (let i = 0; i < daysToLookBack; i++) {
+        const date = new Date(today)
+        date.setDate(today.getDate() - i)
+        const folderPath = `images/${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`
+
+        const { data: files, error } = await supabase.storage.from('birdfeedercam').list(folderPath)
+        if (error) {
+          console.warn(`Could not fetch from ${folderPath}:`, error.message)
+          continue
+        }
+
+        if (files) {
+          const urls = files
+            .filter(file => file.name.endsWith('.jpg') || file.name.endsWith('.png'))
+            .map(file => {
+              const fullPath = `${folderPath}/${file.name}`
+              const url = supabase.storage.from('birdfeedercam').getPublicUrl(fullPath).data.publicUrl
+              return { path: fullPath, url }
+            })
+          allImageUrls = [...allImageUrls, ...urls]
+        }
       }
 
-      if (data) {
-        const urls = data
-          .filter(file => file.name.endsWith('.jpg') || file.name.endsWith('.png'))
-          .map(file =>
-            supabase.storage.from('birdfeedercam').getPublicUrl(`images/${file.name}`).data.publicUrl
-          )
-        setImages(urls)
-      }
+      // Sort by path descending (newest dates/folder names/images last alphabetically)
+      allImageUrls.sort((a, b) => b.path.localeCompare(a.path))
+      const recent = allImageUrls.slice(0, 100).map(item => item.url)
+      setImages(recent)
     }
 
-    fetchImages()
+    fetchRecentImages()
   }, [])
 
   return (
