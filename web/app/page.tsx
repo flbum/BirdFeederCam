@@ -1,18 +1,20 @@
-'use client'
+// app/page.tsx
+import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 
 export default function SplashPage() {
-  const router = useRouter()
   return (
-    <main className="min-h-screen flex items-center justify-center bg-black">
-      <button
-        onClick={() => router.push('/login')}
-        className="flex flex-col items-center space-y-4 p-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl hover:scale-105 shadow-lg"
-      >
-        <Image src="/cardinal.png" alt="Logo" width={80} height={80} />
-        <span className="text-2xl font-bold text-white">Enter Em and M&apos;s Bird Feeder</span>
-      </button>
+    <main className="min-h-screen flex flex-col items-center justify-center bg-black">
+      <Image src="/cardinal.png" alt="Logo" width={150} height={150} />
+      <h1 className="text-4xl font-bold mt-4 mb-8">Em and M’s Bird Feeder</h1>
+      <div className="flex gap-4">
+        <Link href="/login" className="btn">
+          Login
+        </Link>
+        <Link href="/signup" className="btn">
+          Sign up
+        </Link>
+      </div>
     </main>
   )
 }
