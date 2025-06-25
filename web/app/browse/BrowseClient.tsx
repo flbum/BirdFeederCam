@@ -1,8 +1,9 @@
-// app/browse/BrowseClient.tsx
 'use client'
+
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import Image from 'next/image'
 
 export default function BrowseClient() {
   const supabase = createClientComponentClient()
@@ -58,8 +59,7 @@ export default function BrowseClient() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      {/* Breadcrumb */}
+    <div className="p-6 max-w-6xl mx-auto bg-gradient-to-b from-black via-zinc-900 to-black text-white">
       <nav className="text-zinc-400 text-sm mb-4">
         {path.split('/').map((segment, i, arr) => {
           const subPath = arr.slice(0, i + 1).join('/')
@@ -75,7 +75,6 @@ export default function BrowseClient() {
         })}
       </nav>
 
-      {/* Up button */}
       {path !== 'images' && (
         <button onClick={goUp}
           className="mb-4 px-3 py-1 bg-zinc-700 hover:bg-zinc-600 rounded text-sm">
@@ -83,7 +82,6 @@ export default function BrowseClient() {
         </button>
       )}
 
-      {/* Folders */}
       {folders.length > 0 && (
         <div className="mb-6 flex flex-wrap gap-3">
           {folders.map(f => (
@@ -95,20 +93,24 @@ export default function BrowseClient() {
         </div>
       )}
 
-      {/* Images */}
       {images.length > 0 && (
         <>
-          <h2 className="text-xl mb-3 text-white">🖼️ Images</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <h2 className="text-xl mb-3">🖼️ Images</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {images.map(img => (
-              <img key={img.name} src={img.url} alt={img.name}
-                className="rounded shadow border" loading="lazy" />
+              <Image
+                key={img.name}
+                src={img.url!}
+                alt={img.name}
+                width={400}
+                height={300}
+                className="rounded shadow border object-cover"
+              />
             ))}
           </div>
         </>
       )}
 
-      {/* Empty */}
       {folders.length === 0 && images.length === 0 && (
         <p className="text-zinc-500 italic">No folders or images found here.</p>
       )}

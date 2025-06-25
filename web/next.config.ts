@@ -1,7 +1,12 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  images: {
+    domains: ['famtonvhjqhzrohpujls.supabase.co'], // Replace with your actual Supabase project domain
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
+}
 
-export default nextConfig;
+export default nextConfig

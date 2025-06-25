@@ -1,4 +1,3 @@
-// app/browse/page.tsx
 import { Suspense } from 'react'
 import BrowseClient from './BrowseClient'
 
