@@ -95,7 +95,7 @@ export default function BrowseClient() {
 
       {images.length > 0 && (
         <>
-          <h2 className="text-xl mb-3">🖼️ Images</h2>
+          <h2 className="text-xl mb-3">Images</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {images.map(img => (
               <Image
