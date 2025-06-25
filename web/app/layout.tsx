@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Browse
               </button>
             </Link>
-            <Link href="/">
+            <Link href="/home">
               <Image src="/cardinal.png" alt="Logo" width={55} height={55} />
             </Link>
             <Link href="/about">
