@@ -3,13 +3,11 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-  const router = useRouter()
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault()
