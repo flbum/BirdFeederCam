@@ -146,10 +146,12 @@ export default function BrowseClient() {
             <h3 className="text-white text-center text-lg mb-4">
               {getTitleFromFilename(selected.name)}
             </h3>
-            <img
+            <Image
               src={selected.url}
               alt={selected.name}
-              className="-rotate-90 max-h-[80vh] mx-auto rounded"
+              width={800}
+              height={600}
+              className="-rotate-90 max-h-[80vh] mx-auto rounded object-contain"
             />
           </div>
         </div>
