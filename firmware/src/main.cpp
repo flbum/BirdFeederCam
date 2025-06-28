@@ -2,7 +2,7 @@
 #include <HTTPClient.h>
 #include "esp_camera.h"
 #include "ArduinoJson.h"
-#include "secrets.h"   // Your WiFi and Supabase secrets here
+#include "secrets.h"
 #include <time.h>
 
 // Camera model: AI Thinker
@@ -26,7 +26,10 @@
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
 
-#define PIR_PIN           14  // Motion sensor pin
+#define PIR_PIN           14
+#define TIMEZONE_OFFSET   -4 * 3600  // Eastern Daylight Time (EDT)
+
+const int NUM_NETWORKS = sizeof(ssidList) / sizeof(ssidList[0]);
 
 void startCamera() {
   camera_config_t config;
@@ -50,20 +53,73 @@ void startCamera() {
   config.pin_reset    = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
-  config.frame_size = FRAMESIZE_QQVGA;   // small image for faster upload
-  config.jpeg_quality = 12;              // lower number = higher quality
-  config.fb_count = 1;
+  config.frame_size   = FRAMESIZE_SVGA;
+  config.jpeg_quality = 10;
+  config.fb_count     = 1;
 
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
-    Serial.printf("Camera init failed with error 0x%x\n", err);
+    Serial.printf("❌ Camera init failed with error 0x%x\n", err);
     return;
   }
+
+  sensor_t * s = esp_camera_sensor_get();
+
+  // 🛠️ Base camera tuning
+  s->set_framesize(s, FRAMESIZE_SVGA);
+  s->set_quality(s, 10);
+  s->set_brightness(s, 1);
+  s->set_contrast(s, 1);
+  s->set_saturation(s, 0);
+  s->set_whitebal(s, 1);
+  s->set_awb_gain(s, 1);
+  s->set_gainceiling(s, (gainceiling_t)4);
+  s->set_exposure_ctrl(s, 1);
+  s->set_aec2(s, 1);
+  s->set_ae_level(s, 0);
+  s->set_gain_ctrl(s, 1);
+  s->set_wb_mode(s, 0);
+  s->set_lenc(s, 1);
+  s->set_hmirror(s, 0);   // Rotate 90°
+  s->set_vflip(s, 0);     // Rotate 90°
 }
 
-void uploadToSupabase(camera_fb_t* fb) {
+bool connectToWiFi(int timeoutPerNetwork = 10) {
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect(true);
+  delay(1000);
+
+  Serial.println("📡 Scanning for nearby networks...");
+  int n = WiFi.scanNetworks();
+  for (int i = 0; i < n; ++i) {
+    Serial.printf("  • %s (RSSI %d)\n", WiFi.SSID(i).c_str(), WiFi.RSSI(i));
+  }
+
+  for (int i = 0; i < NUM_NETWORKS; i++) {
+    Serial.printf("🔌 Trying SSID: %s\n", ssidList[i]);
+    WiFi.begin(ssidList[i], passwordList[i]);
+
+    unsigned long startTime = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - startTime < timeoutPerNetwork * 1000) {
+      Serial.print(".");
+      delay(500);
+    }
+    Serial.println();
+
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("✅ Connected to WiFi");
+      return true;
+    } else {
+      Serial.println("❌ Failed to connect");
+    }
+  }
+
+  return false;
+}
+
+void uploadToSupabase(camera_fb_t* fb, struct tm* timeinfo) {
   if (!fb) {
-    Serial.println("No image data!");
+    Serial.println("❌ No image data!");
     return;
   }
 
@@ -71,22 +127,21 @@ void uploadToSupabase(camera_fb_t* fb) {
   client.setInsecure();
   HTTPClient http;
 
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) {
-    Serial.println("Failed to obtain time");
-    return;
-  }
-
-  // Format: /images/YYYY/MM/DD/filename.jpg
   char folder[32];
-  char fname[32];
-  strftime(folder, sizeof(folder), "images/%Y/%m/%d", &timeinfo);
-  strftime(fname, sizeof(fname), "%Y-%m-%d_%H-%M-%S.jpg", &timeinfo);
+  char fname[40];
+
+  if (timeinfo) {
+    strftime(folder, sizeof(folder), "images/%Y/%m/%d", timeinfo);
+    strftime(fname, sizeof(fname), "%Y-%m-%d_%H-%M-%S.jpg", timeinfo);
+  } else {
+    strcpy(folder, "images/unknown");
+    sprintf(fname, "unknown_%lu.jpg", millis());
+  }
 
   String fullPath = String(folder) + "/" + String(fname);
   String url = String(SUPABASE_URL) + "/storage/v1/object/" + SUPABASE_BUCKET + "/" + fullPath;
 
-  Serial.printf("Uploading to: %s\n", url.c_str());
+  Serial.printf("📤 Uploading to: %s\n", url.c_str());
 
   http.begin(client, url);
   http.addHeader("Content-Type", "image/jpeg");
@@ -95,64 +150,96 @@ void uploadToSupabase(camera_fb_t* fb) {
 
   int httpResponseCode = http.PUT(fb->buf, fb->len);
   if (httpResponseCode > 0) {
-    Serial.printf("Upload succeeded. Response: %d\n", httpResponseCode);
+    Serial.printf("✅ Upload OK: %d\n", httpResponseCode);
   } else {
-    Serial.printf("Upload failed. Error: %s\n", http.errorToString(httpResponseCode).c_str());
+    Serial.printf("❌ Upload failed: %s\n", http.errorToString(httpResponseCode).c_str());
   }
 
   http.end();
 }
 
-void setup() {
-  Serial.begin(115200);
-  delay(500);
-  Serial.println("Booting...");
-
-  pinMode(PIR_PIN, INPUT);
-
-  // Only act if woken by motion
-  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0) {
-    Serial.println("Motion detected, waking up...");
-
-    // Connect to WiFi
-    WiFi.begin(ssid, password);
-    Serial.print("Connecting to WiFi");
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-    }
-    Serial.println("\nConnected to WiFi");
-
-    // Set time from NTP
-    configTime(0, 0, "pool.ntp.org", "time.nist.gov");
-    struct tm timeinfo;
-    if (getLocalTime(&timeinfo)) {
-      Serial.println("Time synchronized");
-    } else {
-      Serial.println("Failed to sync time");
-    }
-
-    // Start camera and capture
-    startCamera();
-    camera_fb_t* fb = esp_camera_fb_get();
-    if (fb) {
-      uploadToSupabase(fb);
-      esp_camera_fb_return(fb);
-    } else {
-      Serial.println("Camera capture failed");
-    }
-  } else {
-    Serial.println("Not a PIR wakeup");
+void prepareSleep() {
+  Serial.println("🔕 Waiting for PIR to go LOW...");
+  while (digitalRead(PIR_PIN) == HIGH) {
+    delay(100);
   }
 
-  // Prepare for next PIR wakeup
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_14, 1);
-
-  delay(100);  // Allow serial to flush
-  Serial.println("Going to deep sleep...");
+  Serial.println("😴 Going to deep sleep. Waiting for next motion...");
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_14, 1);  // PIR rising edge
+  delay(100);
   esp_deep_sleep_start();
 }
 
+void setup() {
+  Serial.begin(115200);
+  delay(500);
+  Serial.println("🔄 Booting...");
+
+  pinMode(PIR_PIN, INPUT);
+  startCamera();
+
+  // 🔁 Let camera auto-adjust by grabbing a few dummy frames
+  Serial.println("🎞️ Warming up camera...");
+  for (int i = 0; i < 5; i++) {
+    camera_fb_t* warm = esp_camera_fb_get();
+    if (warm) esp_camera_fb_return(warm);
+    delay(200);
+  }
+
+  camera_fb_t* fb = nullptr;
+
+  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0) {
+    Serial.println("👀 Motion detected");
+
+    fb = esp_camera_fb_get();
+    if (fb) {
+      Serial.printf("📸 Captured image (%d bytes)\n", fb->len);
+    } else {
+      Serial.println("⚠️ Camera capture failed");
+    }
+
+    if (connectToWiFi()) {
+      configTime(TIMEZONE_OFFSET, 0, "pool.ntp.org", "time.nist.gov");
+      struct tm timeinfo;
+      if (getLocalTime(&timeinfo)) {
+        Serial.println("🕒 Time synced");
+
+        // 🌓 Day/Night adjustments
+        sensor_t * s = esp_camera_sensor_get();
+        if (timeinfo.tm_hour >= 21 || timeinfo.tm_hour < 6) {
+          Serial.println("🌙 Night mode: Adjusting camera settings");
+          s->set_brightness(s, 2);
+          s->set_gainceiling(s, (gainceiling_t)6);
+          s->set_exposure_ctrl(s, 1);
+          s->set_aec2(s, 1);
+        } else {
+          Serial.println("☀️ Day mode: Normal settings");
+          s->set_brightness(s, 1);
+          s->set_gainceiling(s, (gainceiling_t)4);
+          s->set_exposure_ctrl(s, 1);
+          s->set_aec2(s, 1);
+        }
+
+        uploadToSupabase(fb, &timeinfo);
+      } else {
+        Serial.println("⚠️ Failed to sync time");
+        uploadToSupabase(fb, nullptr);
+      }
+    } else {
+      Serial.println("🚫 Skipping upload (no WiFi)");
+    }
+
+    if (fb) {
+      esp_camera_fb_return(fb);
+    }
+
+  } else {
+    Serial.println("🌀 First boot or unknown wake cause");
+  }
+
+  prepareSleep();
+}
+
 void loop() {
-  // Not used — the ESP goes to sleep after setup
+  // Nothing here
 }
