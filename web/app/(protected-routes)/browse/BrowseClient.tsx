@@ -13,6 +13,7 @@ export default function BrowseClient() {
 
   const [folders, setFolders] = useState<string[]>([])
   const [images, setImages] = useState<{ name: string; url: string }[]>([])
+  const [selected, setSelected] = useState<{ name: string; url: string } | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -36,7 +37,7 @@ export default function BrowseClient() {
           url: supabase
             .storage
             .from('birdfeedercam')
-            .getPublicUrl(`${path}/${file.name}`).data.publicUrl,
+            .getPublicUrl(`${path}/${file.name}`).data.publicUrl || '',
         }))
 
       setFolders(f)
@@ -58,8 +59,17 @@ export default function BrowseClient() {
     }
   }
 
+  function getTitleFromFilename(name: string): string {
+    const match = name.match(/(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})/)
+    if (match) {
+      const [, y, m, d, h, min, s] = match
+      return `${y}-${m}-${d} ${h}:${min}:${s}`
+    }
+    return name
+  }
+
   return (
-    <div className="p-6 max-w-6xl mx-auto bg-gradient-to-b from-black via-zinc-900 to-black text-white">
+    <div className="p-6 max-w-6xl mx-auto bg-gradient-to-b from-black via-zinc-900 to-black text-white min-h-screen">
       <nav className="text-zinc-400 text-sm mb-4">
         {path.split('/').map((segment, i, arr) => {
           const subPath = arr.slice(0, i + 1).join('/')
@@ -98,14 +108,15 @@ export default function BrowseClient() {
           <h2 className="text-xl mb-3">Images</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {images.map(img => (
-              <Image
-                key={img.name}
-                src={img.url!}
-                alt={img.name}
-                width={400}
-                height={300}
-                className="rounded shadow border object-cover"
-              />
+              <div key={img.name} onClick={() => setSelected(img)} className="cursor-pointer">
+                <Image
+                  src={img.url}
+                  alt={img.name}
+                  width={400}
+                  height={300}
+                  className="-rotate-90 rounded shadow border object-cover transition hover:scale-105"
+                />
+              </div>
             ))}
           </div>
         </>
@@ -113,6 +124,35 @@ export default function BrowseClient() {
 
       {folders.length === 0 && images.length === 0 && (
         <p className="text-zinc-500 italic">No folders or images found here.</p>
+      )}
+
+      {/* Modal */}
+      {selected && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="bg-zinc-900 rounded-lg shadow-xl p-4 max-w-screen-md w-full relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelected(null)}
+              className="absolute top-2 right-2 text-white text-xl"
+              aria-label="Close modal"
+            >
+              ✕
+            </button>
+            <h3 className="text-white text-center text-lg mb-4">
+              {getTitleFromFilename(selected.name)}
+            </h3>
+            <img
+              src={selected.url}
+              alt={selected.name}
+              className="-rotate-90 max-h-[80vh] mx-auto rounded"
+            />
+          </div>
+        </div>
       )}
     </div>
   )
