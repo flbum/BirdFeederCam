@@ -13,7 +13,7 @@ export default function BrowseClient() {
 
   const [folders, setFolders] = useState<string[]>([])
   const [images, setImages] = useState<{ name: string; url: string }[]>([])
-  const [selected, setSelected] = useState<{ name: string; url: string } | null>(null)
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -45,6 +45,23 @@ export default function BrowseClient() {
     }
     load()
   }, [path, supabase])
+  
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (selectedIndex === null) return
+
+        if (e.key === 'ArrowLeft' && selectedIndex > 0) {
+          setSelectedIndex(selectedIndex - 1)
+        } else if (e.key === 'ArrowRight' && selectedIndex < images.length - 1) {
+          setSelectedIndex(selectedIndex + 1)
+        } else if (e.key === 'Escape') {
+          setSelectedIndex(null)
+        }
+      }
+
+      window.addEventListener('keydown', handleKeyDown)
+      return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [selectedIndex, images.length])
 
   const goTo = (sub: string) => {
     const newPath = `${path}/${sub}`
@@ -58,6 +75,8 @@ export default function BrowseClient() {
       router.push(`/browse?path=${encodeURIComponent(parent)}`)
     }
   }
+
+  const selected = selectedIndex !== null ? images[selectedIndex] : null
 
   return (
     <div className="p-6 max-w-6xl mx-auto bg-gradient-to-b from-black via-zinc-900 to-black text-white min-h-screen">
@@ -98,15 +117,15 @@ export default function BrowseClient() {
         <>
           <h2 className="text-xl mb-3">Images</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {images.map(img => (
+            {images.map((img, index) => (
               <button
                 key={img.name}
-                onClick={() => setSelected(img)}
+                onClick={() => setSelectedIndex(index)}
                 className="rounded shadow border overflow-hidden focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 aria-label={`View image ${img.name}`}
               >
                 <Image
-                  src={img.url!}
+                  src={img.url}
                   alt={img.name}
                   width={300}
                   height={400}
@@ -125,37 +144,50 @@ export default function BrowseClient() {
 
       {selected && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setSelected(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+          onClick={() => setSelectedIndex(null)}
         >
           <div
-            className="relative max-w-[90vw] max-h-[90vh] bg-zinc-900 rounded-lg p-4 shadow-lg"
+            className="relative w-full h-full flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="mb-4 text-white text-center font-semibold select-text">
-              {selected.name.replace('.jpg', '').replace(/_/g, ' ')}
-            </h2>
             <Image
               src={selected.url}
               alt={selected.name}
-              width={600}
-              height={800}
-              className="rounded object-contain"
+              fill
+              className="object-contain"
               style={{
                 transform: 'rotate(-90deg)',
-                maxWidth: '100%',
-                maxHeight: '100%',
-                display: 'block',
-                margin: '0 auto',
+                transformOrigin: 'center center',
               }}
+              priority
             />
+
+            {selectedIndex !== null && selectedIndex > 0 && (
+              <button
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 text-white text-5xl font-bold px-2"
+                onClick={() => setSelectedIndex(selectedIndex - 1)}
+              >
+                ‹
+              </button>
+            )}
+
+            {selectedIndex !== null && selectedIndex < images.length - 1 && (
+              <button
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white text-5xl font-bold px-2"
+                onClick={() => setSelectedIndex(selectedIndex + 1)}
+              >
+                ›
+              </button>
+            )}
+
             <button
-              className="absolute top-2 right-2 text-white text-3xl font-bold leading-none"
-              onClick={() => setSelected(null)}
+              className="absolute top-4 right-4 text-white text-4xl font-bold leading-none focus:outline-none focus:ring-2 focus:ring-cyan-500 rounded"
+              onClick={() => setSelectedIndex(null)}
               aria-label="Close modal"
               type="button"
             >
-              &times;
+              ×
             </button>
           </div>
         </div>

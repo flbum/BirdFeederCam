@@ -62,6 +62,24 @@ export default function HomePage() {
     loadImages()
   }, [])
 
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (selectedIndex === null) return
+
+        if (e.key === 'ArrowLeft' && selectedIndex > 0) {
+          setSelectedIndex(selectedIndex - 1)
+        } else if (e.key === 'ArrowRight' && selectedIndex < images.length - 1) {
+          setSelectedIndex(selectedIndex + 1)
+        } else if (e.key === 'Escape') {
+          setSelectedIndex(null)
+        }
+      }
+
+      window.addEventListener('keydown', handleKeyDown)
+      return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [selectedIndex, images.length])
+
+
   const selected = selectedIndex !== null ? images[selectedIndex] : null
 
   return (
