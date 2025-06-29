@@ -1,67 +1,66 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Image from 'next/image'
 
+const supabase = createClientComponentClient()
+
+// 🔁 Move this outside the component to avoid ESLint warning
+async function listAllImages(folder: string): Promise<{ name: string; fullPath: string }[]> {
+  let allFiles: { name: string; fullPath: string }[] = []
+
+  const { data, error } = await supabase.storage.from('birdfeedercam').list(folder, {
+    limit: 1000,
+    offset: 0,
+    sortBy: { column: 'name', order: 'asc' },
+  })
+
+  if (error || !data) {
+    console.error('Error listing folder:', folder, error)
+    return allFiles
+  }
+
+  const folders = data.filter((item) => item.metadata === null)
+  const files = data.filter((item) => item.metadata !== null)
+
+  files.forEach((f) => {
+    allFiles.push({ name: f.name, fullPath: `${folder}/${f.name}` })
+  })
+
+  for (const f of folders) {
+    const nestedFiles = await listAllImages(`${folder}/${f.name}`)
+    allFiles = allFiles.concat(nestedFiles)
+  }
+
+  return allFiles
+}
+
 export default function HomePage() {
-  const supabase = createClientComponentClient()
   const [images, setImages] = useState<{ name: string; url: string; fullPath: string }[]>([])
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // Recursive function to list all images
-  async function listAllImages(folder: string): Promise<{ name: string; fullPath: string }[]> {
-    let allFiles: { name: string; fullPath: string }[] = []
-    const { data, error } = await supabase.storage.from('birdfeedercam').list(folder, {
-      limit: 1000,
-      offset: 0,
-      sortBy: { column: 'name', order: 'asc' },
-    })
-
-    if (error || !data) return allFiles
-
-    const folders = data.filter(item => item.metadata === null)
-    const files = data.filter(item => item.metadata !== null)
-    files.forEach(f => allFiles.push({ name: f.name, fullPath: `${folder}/${f.name}` }))
-    for (const f of folders) {
-      const nested = await listAllImages(`${folder}/${f.name}`)
-      allFiles = allFiles.concat(nested)
-    }
-
-    return allFiles
-  }
-
   useEffect(() => {
     const loadImages = async () => {
       setLoading(true)
+
       const allFiles = await listAllImages('images')
       allFiles.sort((a, b) => (a.fullPath < b.fullPath ? -1 : 1))
       const latest = allFiles.slice(0, 100)
-      const pics = latest.map(file => ({
+
+      const pics = latest.map((file) => ({
         name: file.name,
         fullPath: file.fullPath,
         url: supabase.storage.from('birdfeedercam').getPublicUrl(file.fullPath).data.publicUrl,
       }))
+
       setImages(pics)
       setLoading(false)
     }
 
     loadImages()
-  }, [supabase])
-
-  // Swipe & keyboard controls
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (selectedIndex === null) return
-    if (e.key === 'Escape') setSelectedIndex(null)
-    else if (e.key === 'ArrowLeft') setSelectedIndex(i => (i !== null && i > 0 ? i - 1 : i))
-    else if (e.key === 'ArrowRight') setSelectedIndex(i => (i !== null && i < images.length - 1 ? i + 1 : i))
-  }, [selectedIndex, images.length])
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleKeyDown])
+  }, [])
 
   const selected = selectedIndex !== null ? images[selectedIndex] : null
 
@@ -102,36 +101,22 @@ export default function HomePage() {
           onClick={() => setSelectedIndex(null)}
         >
           <div
-            className="relative bg-zinc-900 rounded-lg p-4 shadow-lg w-full h-full max-w-[95vw] max-h-[95vh] flex flex-col items-center overflow-hidden"
+            className="relative w-full h-full flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="mb-2 text-white text-center font-semibold select-text max-w-[90vw] overflow-hidden whitespace-nowrap overflow-ellipsis">
-              {selected.name.replace('.jpg', '').replace(/_/g, ' ')}
-            </h2>
+            <Image
+              src={selected.url}
+              alt={selected.name}
+              fill
+              className="object-contain"
+              style={{
+                transform: 'rotate(-90deg)',
+                transformOrigin: 'center center',
+              }}
+              priority
+            />
 
-            <div className="relative flex-grow w-full h-full">
-              <Image
-                src={selected.url}
-                alt={selected.name}
-                fill
-                className="rounded object-contain"
-                style={{ transform: 'rotate(-90deg)', transformOrigin: 'center center' }}
-                sizes="(max-width: 768px) 100vw, 90vw"
-                priority
-              />
-            </div>
-
-            {/* Nav buttons */}
-            <button
-              className="absolute top-2 right-2 text-white text-4xl font-bold leading-none focus:outline-none focus:ring-2 focus:ring-cyan-500 rounded"
-              onClick={() => setSelectedIndex(null)}
-              aria-label="Close modal"
-              type="button"
-            >
-              &times;
-            </button>
-
-            {selectedIndex > 0 && (
+            {selectedIndex !== null && selectedIndex > 0 && (
               <button
                 className="absolute left-2 top-1/2 transform -translate-y-1/2 text-white text-5xl font-bold px-2"
                 onClick={() => setSelectedIndex(selectedIndex - 1)}
@@ -139,7 +124,8 @@ export default function HomePage() {
                 ‹
               </button>
             )}
-            {selectedIndex < images.length - 1 && (
+
+            {selectedIndex !== null && selectedIndex < images.length - 1 && (
               <button
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white text-5xl font-bold px-2"
                 onClick={() => setSelectedIndex(selectedIndex + 1)}
@@ -147,6 +133,15 @@ export default function HomePage() {
                 ›
               </button>
             )}
+
+            <button
+              className="absolute top-4 right-4 text-white text-4xl font-bold leading-none focus:outline-none focus:ring-2 focus:ring-cyan-500 rounded"
+              onClick={() => setSelectedIndex(null)}
+              aria-label="Close modal"
+              type="button"
+            >
+              ×
+            </button>
           </div>
         </div>
       )}
