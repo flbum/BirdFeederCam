@@ -32,7 +32,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
             </button>
           </Link>
           <Link href="/home">
-            <Image src="/cardinal.png" alt="Logo" width={55} height={55} />
+            <Image src="/cardinal.png" alt="Logo" width={70} height={70} />
           </Link>
           <Link href="/about">
             <button className="bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 px-4 rounded-xl shadow-lg">

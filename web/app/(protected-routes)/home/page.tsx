@@ -46,7 +46,7 @@ export default function HomePage() {
       setLoading(true)
 
       const allFiles = await listAllImages('images')
-      allFiles.sort((a, b) => (a.fullPath < b.fullPath ? -1 : 1))
+      allFiles.sort((a, b) => (a.fullPath < b.fullPath ? 1 : -1))
       const latest = allFiles.slice(0, 100)
 
       const pics = latest.map((file) => ({
@@ -101,7 +101,7 @@ export default function HomePage() {
               alt={img.name}
               width={300}
               height={400}
-              className="object-cover rotate-[-90deg] transition-transform hover:scale-105"
+              className="object-cover rotate-[90deg] transition-transform hover:scale-105"
               loading="lazy"
               style={{ display: 'block' }}
             />
@@ -128,7 +128,7 @@ export default function HomePage() {
               fill
               className="object-contain"
               style={{
-                transform: 'rotate(-90deg)',
+                transform: 'rotate(90deg)',
                 transformOrigin: 'center center',
               }}
               priority

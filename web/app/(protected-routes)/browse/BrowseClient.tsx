@@ -45,7 +45,7 @@ export default function BrowseClient() {
     }
     load()
   }, [path, supabase])
-  
+
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
         if (selectedIndex === null) return
@@ -129,7 +129,7 @@ export default function BrowseClient() {
                   alt={img.name}
                   width={300}
                   height={400}
-                  className="object-cover rotate-[-90deg] transition-transform hover:scale-105"
+                  className="object-cover rotate-[90deg] transition-transform hover:scale-105"
                   style={{ display: 'block' }}
                 />
               </button>
@@ -157,7 +157,7 @@ export default function BrowseClient() {
               fill
               className="object-contain"
               style={{
-                transform: 'rotate(-90deg)',
+                transform: 'rotate(90deg)',
                 transformOrigin: 'center center',
               }}
               priority
