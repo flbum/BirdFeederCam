@@ -20,7 +20,7 @@ export default function BrowseClient() {
       const { data, error } = await supabase
         .storage
         .from('birdfeedercam')
-        .list(path, { limit: 100, sortBy: { column: 'name', order: 'asc' } })
+        .list(path, { limit: 100, sortBy: { column: 'name', order: 'desc' } })
 
       if (error) {
         console.error('Browse load error:', error)
